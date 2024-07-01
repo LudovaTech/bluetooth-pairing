@@ -11,6 +11,7 @@ void setup() {
     master.begin(38400);
     slave.begin(38400);
     Serial.println("speaking with master...");
+    master.listen();
     master.print("AT\r\n");
 }
 
@@ -18,19 +19,9 @@ String receiveBuffer = "";
 
 void loop() {
     // Lire depuis le master
-    if (master.available()) {
-        Serial.println("OK");
-        String receive = "";
-        while (master.available()) {
-            char receiveChar = master.read();
-            if (receiveChar == '\r' || receiveChar == '\n') {
-                if (receiveChar == '\r') master.read(); // Lire le '\n' suivant
-                break;
-            } else {
-                receive += receiveChar;
-            }
-        }
-        Serial.println("master : " + receive);
+    while (master.available()) {
+        char c = master.read();
+        Serial.print(c);
     }
 
     // Lire depuis le slave
@@ -83,6 +74,7 @@ void processSerialCommand(String command) {
             if (speak_with_master) {
                 Serial.println("send '" + command + "'");
                 master.print(command + "\r\n");
+                delay(1000);
             } else {
                 slave.print(command + "\r\n");
             }
