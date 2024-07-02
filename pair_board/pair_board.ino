@@ -4,6 +4,8 @@ SoftwareSerial master(11, 12);
 SoftwareSerial slave(9, 10);
 
 bool speak_with_master = true;
+String receiveBuffer = "";
+bool activeInteractiveMode = true;
 
 void setup() {
     Serial.begin(38400);
@@ -16,9 +18,14 @@ void setup() {
     master.listen();
 }
 
-String receiveBuffer = "";
-
 void loop() {
+    transmitInfos();
+    if (activeInteractiveMode) {
+        interactiveMode();
+    }
+}
+
+void transmitInfos() {
     // Lire depuis le master
     if (master.available()) {
         String receive = "";
@@ -48,7 +55,10 @@ void loop() {
         }
         Serial.println("slave  : " + receive);
     }
+}
 
+
+void interactiveMode() {
     // Lire depuis Serial
     if (Serial.available()) {
         while (Serial.available()) {
@@ -63,17 +73,17 @@ void loop() {
 
 void processSerialCommand(String command) {
     command.trim(); // Supprimer les espaces en début et en fin de la commande
-    if (command == "BC+WHICH?") {
+    if (command == "BC+WHICH?" || command == "bw") {
         if (speak_with_master) {
             Serial.println("board  : speaking with master");
         } else {
             Serial.println("board  : speaking with slave");
         }
-    } else if (command == "BC+WHICH=MASTER") {
+    } else if (command == "BC+WHICH=MASTER" || command == "bwm") {
         speak_with_master = true;
         master.listen();
         Serial.println("board  : now speaking with master");
-    } else if (command == "BC+WHICH=SLAVE") {
+    } else if (command == "BC+WHICH=SLAVE" || command == "bws") {
         speak_with_master = false;
         slave.listen();
         Serial.println("board  : now speaking with slave");
