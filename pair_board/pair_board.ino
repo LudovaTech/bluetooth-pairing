@@ -11,12 +11,12 @@ bool _activeAlim = false;
 
 void alimON() {
   _activeAlim = true;
-  digitalWrite(alimPin, LOW);
+  digitalWrite(alimPin, HIGH);
 }
 
 void alimOFF() {
   _activeAlim = false;
-  digitalWrite(alimPin, HIGH);
+  digitalWrite(alimPin, LOW);
 }
 
 bool alim() {
@@ -118,6 +118,14 @@ void processSerialCommand(String command) {
     _speaking_with_master = false;
     slave.listen();
     Serial.println("board  : now speaking with slave");
+  } else if (command == "BC+POWER?" || command == "bp") {
+    Serial.println("board  : power : " + String(alim()));
+  } else if (command == "BC+POWER=ON" || command == "bp1") {
+    alimON();
+    Serial.println("board  : power : " + String(alim()));
+  } else if (command == "BC+POWER=OFF" || command == "bp0") {
+    alimOFF();
+    Serial.println("board  : power : " + String(alim()));
   } else {
     if (!command.startsWith("AT")) {
       Serial.println("board  : unknown command : '" + command + "'");
