@@ -10,18 +10,28 @@ void setup() {
     Serial.println("configuring...");
     master.begin(38400);
     slave.begin(38400);
+    pinMode(13, OUTPUT);
+    digitalWrite(13, HIGH);
     Serial.println("speaking with master...");
     master.listen();
-    master.print("AT\r\n");
 }
 
 String receiveBuffer = "";
 
 void loop() {
     // Lire depuis le master
-    while (master.available()) {
-        char c = master.read();
-        Serial.print(c);
+    if (master.available()) {
+        String receive = "";
+        while (master.available()) {
+            char receiveChar = master.read();
+            if (receiveChar == '\r' || receiveChar == '\n') {
+                if (receiveChar == '\r') master.read(); // Lire le '\n' suivant
+                break;
+            } else {
+                receive += receiveChar;
+            }
+        }
+        Serial.println("master : " + receive);
     }
 
     // Lire depuis le slave
@@ -72,9 +82,7 @@ void processSerialCommand(String command) {
             Serial.println("board  : unknown command : '" + command + "'");
         } else {
             if (speak_with_master) {
-                Serial.println("send '" + command + "'");
                 master.print(command + "\r\n");
-                delay(1000);
             } else {
                 slave.print(command + "\r\n");
             }
