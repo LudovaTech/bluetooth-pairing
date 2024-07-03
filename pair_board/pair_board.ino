@@ -13,6 +13,7 @@ void sendToMaster(String message) {
     master.listen();
     _speaking_with_master = true;
   }
+  Serial.println("board  -> master : " + message);
   master.print(message + "\r\n");
 }
 
@@ -21,6 +22,7 @@ void sendToSlave(String message) {
     slave.listen();
     _speaking_with_master = false;
   }
+  Serial.println("board  ->  slave : " + message);
   slave.print(message + "\r\n");
 }
 
