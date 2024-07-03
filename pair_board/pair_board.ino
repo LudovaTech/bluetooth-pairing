@@ -113,74 +113,65 @@ const String _pair1Commands[] = {
     "AT+ORGL",
     "AT+ROLE=1",
     "AT+RESET",
-    "AT+INIT",
-    "AT+RMAAD"};
+    "AT+RMAAD",
+    "AT+NAME=LUDOMASTER"};
 
 const String _pair2Commands[] = {
     "AT",
     "AT+ORGL",
-    "AT+RESET",
-    "AT+INIT",
-    "AT+RMAAD"};
+    "AT+RMAAD",
+    "AT+NAME=LUDOSLAVE"};
+
+bool waitForOK(String *failed, String command, bool waitMaster) {
+  while (true) {
+    if (
+        waitMaster
+            ? master.available()
+            : slave.available()) {
+      String receive = waitMaster ? readFromMaster() : readFromSlave();
+      if (receive == "OK") {
+        break;
+      } else if (receive == "ERROR:[0]") {
+        *failed += waitMaster ? " master:" : " slave:";
+        *failed += command;
+        break;
+      } else {
+        Serial.println("RECEIVE " + receive);
+      }
+    }
+    if (Serial.available()) {
+      String message = readFromSerial();
+      message.trim();
+      if (message == "q") {
+        return true;
+      } else if (message == "c") {
+        *failed += waitMaster ? " master:passed:" : " slave:passed:";
+        *failed += command;
+        break;
+      }
+    }
+  }
+  return false;
+}
 
 void pair() {
   String failed = "";
   Serial.println("board  : PAIR");
   for (const String command : _pair1Commands) {
     sendToMaster(command);
-    while (true) {
-      if (master.available()) {
-        String receive = readFromMaster();
-        if (receive == "OK") {
-          break;
-        } else if (receive == "ERROR:[0]") {
-          failed += " master:" + command;
-          break;
-        }
-      }
-      if (Serial.available()) {
-        String message = readFromSerial();
-        message.trim();
-        if (message == "q") {
-          return;
-        } else if (message == "c") {
-          failed += " master:passed:" + command;
-          break;
-        }
-      }
-    }
+    if (waitForOK(&failed, command, true)) return;
   }
   for (const String command : _pair2Commands) {
     sendToSlave(command);
-    while (true) {
-      if (slave.available()) {
-        String receive = readFromSlave();
-        if (receive == "OK") {
-          break;
-        } else if (receive == "ERROR:[0]") {
-          failed += " slave:" + command;
-          break;
-        }
-      }
-      if (Serial.available()) {
-        String message = readFromSerial();
-        message.trim();
-        if (message == "q") {
-          return;
-        } else if (message == "c") {
-          failed += " slave:passed:" + command;
-          break;
-        }
-      }
-    }
+    if (waitForOK(&failed, command, false)) return;
   }
   sendToSlave("AT+ADDR?");
-  String address;
-  while (address.substring(0, 6) != "+ADDR:") {
+  String message_address;
+  while (message_address.substring(0, 6) != "+ADDR:") {
     if (slave.available()) {
-      address = readFromSlave();
-      address.trim();
-      if (address == "ERROR:[0]") {
+      message_address = readFromSlave();
+      message_address.trim();
+      if (message_address == "ERROR:[0]") {
         Serial.println("FAILED : AT+ADDR");
         return;
       }
@@ -193,11 +184,22 @@ void pair() {
       }
     }
   }
-  String output = address.substring(6);
-  output.replace(":", ",");
-  Serial.println(output);
+  String address = message_address.substring(6);
+  address.replace(":", ",");
+  if (slave.available()) {
+    readFromSlave();  // trap OK
+  }
+  sendToMaster("AT+PAIR=" + address + ",20");
+  // AT+PAIR don't send OK I don't know why
+  sendToMaster("AT+BIND=" + address);
+  if (waitForOK(&failed, "AT+BIND", true)) return;
+  sendToMaster("AT+LINK=" + address);
+  if (waitForOK(&failed, "AT+LINK", true)) return;
+
   if (failed != "") {
     Serial.println("FAILED :" + failed);
+  } else {
+    Serial.println("DONE");
   }
 }
 
