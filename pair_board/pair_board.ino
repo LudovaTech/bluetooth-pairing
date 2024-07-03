@@ -43,27 +43,29 @@ String _readFrom(SoftwareSerial *ser) {
   return receive;
 }
 
-String readFromMaster() {
-  return _readFrom(&master);
+String readFromMaster(bool print = true) {
+  String receive = _readFrom(&master);
+  if (print) {
+    Serial.println("master : " + receive);
+  }
+  return receive;
 }
 
-String readFromSlave() {
-  return _readFrom(&slave);
+String readFromSlave(bool print = true) {
+  String receive = _readFrom(&slave);
+  if (print) {
+    Serial.println("slave  : " + receive);
+  }
+  return receive;
 }
 
 void transmitInfos(bool print = true) {
   if (master.available()) {
-    String receive = readFromMaster();
-    if (print) {
-      Serial.println("master : " + receive);
-    }
+    readFromMaster(print);
   }
 
   if (slave.available()) {
-    String receive = readFromSlave();
-    if (print) {
-      Serial.println("slave  : " + receive);
-    }
+    readFromSlave(print);
   }
 }
 
@@ -94,20 +96,85 @@ void infosFrom(bool toMaster) {
   }
 }
 
+String readFromSerial() {
+  while (Serial.available()) {
+    receiveBuffer += (char)Serial.read();
+    if (receiveBuffer.endsWith("\r\n")) {
+      String receive = receiveBuffer;
+      receiveBuffer = "";  // Réinitialiser le buffer après traitement
+      return receive;
+    }
+  }
+  return "";
+}
+
+const String _pair1Commands[] = {
+    "AT",
+    "AT+ORGL",
+    "AT+ROLE=1",
+    "AT+RESET",
+    "AT+INIT",
+    "AT+RMAAD"};
+
+const String _pair2Commands[] = {
+    "AT",
+    "AT+ORGL",
+    "AT+RESET",
+    "AT+INIT",
+    "AT+RMAAD"};
+
+void pair() {
+  String failed = "";
+  for (const String command : _pair1Commands) {
+    sendToMaster(command);
+    while (true) {
+      if (master.available()) {
+        String receive = readFromMaster();
+        if (receive == "OK") {
+          break;
+        } else if (receive == "ERROR:[0]") {
+          failed += " master:" + command;
+          break;
+        }
+      }
+    }
+  }
+  for (const String command : _pair2Commands) {
+    sendToSlave(command);
+    while (true) {
+      if (slave.available()) {
+        String receive = readFromSlave();
+        if (receive == "OK") {
+          break;
+        } else if (receive == "ERROR:[0]") {
+          failed += " slave:" + command;
+          break;
+        }
+      }
+      if (Serial.available()) {
+        String message = readFromSerial().trim();
+        if (message == "q") {
+          return;
+        } else if (message == "c") {
+          break;
+        }
+      }
+    }
+  }
+  if (failed != "") {
+    Serial.println("FAILED :" + failed);
+  }
+}
+
 void interactiveMode() {
   // Lire depuis Serial
   if (Serial.available()) {
-    while (Serial.available()) {
-      receiveBuffer += (char)Serial.read();
-      if (receiveBuffer.endsWith("\r\n")) {
-        processSerialCommand(receiveBuffer);
-        receiveBuffer = "";  // Réinitialiser le buffer après traitement
-      }
-    }
+    processSerialCommand(readFromSerial());
   }
 }
 
 void processSerialCommand(String command) {
+  if (command == "") return;
   command.trim();  // Supprimer les espaces en début et en fin de la commande
   if (command == "BC+WHICH?" || command == "bw") {
     if (_speaking_with_master) {
@@ -125,6 +192,8 @@ void processSerialCommand(String command) {
     Serial.println("board  : now speaking with slave");
   } else if (command == "BC+INFO" || command == "bi") {
     infosFrom(_speaking_with_master);
+  } else if (command == "BC+INFO" || command == "bp") {
+    pair();
   } else {
     if (!command.startsWith("AT")) {
       Serial.println("board  : unknown command : '" + command + "'");
