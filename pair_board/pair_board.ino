@@ -7,21 +7,6 @@ const int alimPin = 13;
 String receiveBuffer = "";
 bool activeInteractiveMode = true;
 bool _speaking_with_master = true;
-bool _activeAlim = false;
-
-void alimON() {
-  _activeAlim = true;
-  digitalWrite(alimPin, HIGH);
-}
-
-void alimOFF() {
-  _activeAlim = false;
-  digitalWrite(alimPin, LOW);
-}
-
-bool alim() {
-  return _activeAlim;
-}
 
 void sendToMaster(String message) {
   if (!_speaking_with_master) {
@@ -66,8 +51,6 @@ void setup() {
   Serial.println("configuring...");
   master.begin(38400);
   slave.begin(38400);
-  pinMode(13, OUTPUT);
-  alimOFF();
   Serial.println("speaking with master...");
   master.listen();
 }
@@ -118,14 +101,6 @@ void processSerialCommand(String command) {
     _speaking_with_master = false;
     slave.listen();
     Serial.println("board  : now speaking with slave");
-  } else if (command == "BC+POWER?" || command == "bp") {
-    Serial.println("board  : power " + String(alim()));
-  } else if (command == "BC+POWER=ON" || command == "bp1") {
-    alimON();
-    Serial.println("board  : power " + String(alim()));
-  } else if (command == "BC+POWER=OFF" || command == "bp0") {
-    alimOFF();
-    Serial.println("board  : power " + String(alim()));
   } else {
     if (!command.startsWith("AT")) {
       Serial.println("board  : unknown command : '" + command + "'");
