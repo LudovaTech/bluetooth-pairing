@@ -2,7 +2,6 @@
 
 SoftwareSerial master(11, 12);
 SoftwareSerial slave(9, 10);
-const int alimPin = 13;
 
 String receiveBuffer = "";
 bool activeInteractiveMode = true;
@@ -61,7 +60,7 @@ void transmitInfos(bool print = true) {
   }
 
   if (slave.available()) {
-    String receive = readFromMaster();
+    String receive = readFromSlave();
     if (print) {
       Serial.println("slave  : " + receive);
     }
