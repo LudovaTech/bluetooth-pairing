@@ -8,21 +8,25 @@ String receiveBuffer = "";
 bool activeInteractiveMode = true;
 bool _speaking_with_master = true;
 
-void sendToMaster(String message) {
+void sendToMaster(String message, bool print = true) {
   if (!_speaking_with_master) {
     master.listen();
     _speaking_with_master = true;
   }
-  Serial.println("board  -> master : " + message);
+  if (print) {
+    Serial.println("board  -> master : " + message);
+  }
   master.print(message + "\r\n");
 }
 
-void sendToSlave(String message) {
+void sendToSlave(String message, bool print = true) {
   if (_speaking_with_master) {
     slave.listen();
     _speaking_with_master = false;
   }
-  Serial.println("board  ->  slave : " + message);
+  if (print) {
+    Serial.println("board  ->  slave : " + message);
+  }
   slave.print(message + "\r\n");
 }
 
@@ -48,56 +52,43 @@ String readFromSlave() {
   return _readFrom(&slave);
 }
 
-void _sendCommand(SoftwareSerial *ser, String command) {
-    ser->print(command + "\r\n");
-}
-
-void transmitInfos(bool print=true) {
+void transmitInfos(bool print = true) {
   if (master.available()) {
     String receive = readFromMaster();
     if (print) {
-        Serial.println("master : " + receive);
+      Serial.println("master : " + receive);
     }
   }
 
   if (slave.available()) {
     String receive = readFromMaster();
     if (print) {
-        Serial.println("slave  : " + receive);
+      Serial.println("slave  : " + receive);
     }
   }
 }
 
-void infosFrom(SoftwareSerial *ser) {
-    Serial.println("board  : Infos :");
-    transmitInfos();
-    _sendCommand(ser, "AT");
+const String _infosCommands[] = {
+    "AT",
+    "AT+NAME?",
+    "AT+ADDR?",
+    "AT+ROLE?",
+    "AT+PSWD?",
+    "AT+CMODE?",
+    "AT+BIND?"};
+
+void infosFrom(bool toMaster) {
+  Serial.println("board  : Infos :");
+  for (const String command : _infosCommands) {
+    if (toMaster) {
+      sendToMaster(command, false);
+    } else {
+      sendToSlave(command, false);
+    }
     delay(50);
     transmitInfos();
-    _sendCommand(ser, "AT+NAME?");
-    delay(100);
-    transmitInfos();
     transmitInfos(false);
-    _sendCommand(ser, "AT+ADDR?");
-    delay(100);
-    transmitInfos();
-    transmitInfos(false);
-    _sendCommand(ser, "AT+ROLE?");
-    delay(100);
-    transmitInfos();
-    transmitInfos(false);
-    _sendCommand(ser, "AT+PSWD?");
-    delay(100);
-    transmitInfos();
-    transmitInfos(false);
-    _sendCommand(ser, "AT+CMODE?");
-    delay(100);
-    transmitInfos();
-    transmitInfos(false);
-    _sendCommand(ser, "AT+BIND?");
-    delay(100);
-    transmitInfos();
-    transmitInfos(false);
+  }
 }
 
 void interactiveMode() {
@@ -130,13 +121,8 @@ void processSerialCommand(String command) {
     slave.listen();
     Serial.println("board  : now speaking with slave");
   } else if (command == "BC+INFO" || command == "bi") {
-    if (_speaking_with_master) {
-        infosFrom(&master);
-    } else {
-        infosFrom(&slave);
-    }
-  }
-  else {
+    infosFrom(_speaking_with_master);
+  } else {
     if (!command.startsWith("AT")) {
       Serial.println("board  : unknown command : '" + command + "'");
     } else {
