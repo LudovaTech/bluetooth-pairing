@@ -48,30 +48,56 @@ String readFromSlave() {
   return _readFrom(&slave);
 }
 
-void setup() {
-  Serial.begin(38400);
-  Serial.println("configuring...");
-  master.begin(38400);
-  slave.begin(38400);
-  Serial.println("speaking with master...");
-  master.listen();
+void _sendCommand(SoftwareSerial *ser, String command) {
+    ser->print(command + "\r\n");
 }
 
-void loop() {
-  transmitInfos();
-  if (activeInteractiveMode) {
-    interactiveMode();
-  }
-}
-
-void transmitInfos() {
+void transmitInfos(bool print=true) {
   if (master.available()) {
-    Serial.println("master : " + readFromMaster());
+    String receive = readFromMaster();
+    if (print) {
+        Serial.println("master : " + receive);
+    }
   }
 
   if (slave.available()) {
-    Serial.println("slave  : " + readFromSlave());
+    String receive = readFromMaster();
+    if (print) {
+        Serial.println("slave  : " + receive);
+    }
   }
+}
+
+void infosFrom(SoftwareSerial *ser) {
+    Serial.println("board  : Infos :");
+    transmitInfos();
+    _sendCommand(ser, "AT");
+    delay(50);
+    transmitInfos();
+    _sendCommand(ser, "AT+NAME?");
+    delay(100);
+    transmitInfos();
+    transmitInfos(false);
+    _sendCommand(ser, "AT+ADDR?");
+    delay(100);
+    transmitInfos();
+    transmitInfos(false);
+    _sendCommand(ser, "AT+ROLE?");
+    delay(100);
+    transmitInfos();
+    transmitInfos(false);
+    _sendCommand(ser, "AT+PSWD?");
+    delay(100);
+    transmitInfos();
+    transmitInfos(false);
+    _sendCommand(ser, "AT+CMODE?");
+    delay(100);
+    transmitInfos();
+    transmitInfos(false);
+    _sendCommand(ser, "AT+BIND?");
+    delay(100);
+    transmitInfos();
+    transmitInfos(false);
 }
 
 void interactiveMode() {
@@ -103,7 +129,14 @@ void processSerialCommand(String command) {
     _speaking_with_master = false;
     slave.listen();
     Serial.println("board  : now speaking with slave");
-  } else {
+  } else if (command == "BC+INFO" || command == "bi") {
+    if (_speaking_with_master) {
+        infosFrom(&master);
+    } else {
+        infosFrom(&slave);
+    }
+  }
+  else {
     if (!command.startsWith("AT")) {
       Serial.println("board  : unknown command : '" + command + "'");
     } else {
@@ -113,5 +146,21 @@ void processSerialCommand(String command) {
         sendToSlave(command);
       }
     }
+  }
+}
+
+void setup() {
+  Serial.begin(38400);
+  Serial.println("configuring...");
+  master.begin(38400);
+  slave.begin(38400);
+  Serial.println("speaking with master...");
+  master.listen();
+}
+
+void loop() {
+  transmitInfos();
+  if (activeInteractiveMode) {
+    interactiveMode();
   }
 }
