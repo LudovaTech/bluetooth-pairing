@@ -229,7 +229,7 @@ void processSerialCommand(String command) {
     Serial.println("board  : now speaking with slave");
   } else if (command == "BC+INFO" || command == "bi") {
     infosFrom(_speaking_with_master);
-  } else if (command == "BC+INFO" || command == "bp") {
+  } else if (command == "BC+PAIR" || command == "bp") {
     pair();
   } else {
     if (!command.startsWith("AT")) {
@@ -259,3 +259,16 @@ void loop() {
     interactiveMode();
   }
 }
+
+/*
+Commandes :
+bw : BOARD+WHICH? : Vers qui s'addresse les commandes
+bwm : BOARD+WHICH=MASTER : sélectionne master comme receveur des commandes
+bws : BOARD+WHICH=SLAVE : sélectionne slave comme receveur des commandes
+bi : BOARD+INFO : affiche les informations du receveur des commandes
+bp : BOARD+PAIR : appareillage automatique
+
+Dans bp:
+c : continuer à executer
+q : quitter la fonction
+*/
