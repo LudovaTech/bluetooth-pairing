@@ -125,6 +125,7 @@ const String _pair2Commands[] = {
 
 void pair() {
   String failed = "";
+  Serial.println("board  : PAIR");
   for (const String command : _pair1Commands) {
     sendToMaster(command);
     while (true) {
@@ -134,6 +135,16 @@ void pair() {
           break;
         } else if (receive == "ERROR:[0]") {
           failed += " master:" + command;
+          break;
+        }
+      }
+      if (Serial.available()) {
+        String message = readFromSerial();
+        message.trim();
+        if (message == "q") {
+          return;
+        } else if (message == "c") {
+          failed += " master:passed:" + command;
           break;
         }
       }
@@ -152,15 +163,39 @@ void pair() {
         }
       }
       if (Serial.available()) {
-        String message = readFromSerial().trim();
+        String message = readFromSerial();
+        message.trim();
         if (message == "q") {
           return;
         } else if (message == "c") {
+          failed += " slave:passed:" + command;
           break;
         }
       }
     }
   }
+  sendToSlave("AT+ADDR?");
+  String address;
+  while (address.substring(0, 6) != "+ADDR:") {
+    if (slave.available()) {
+      address = readFromSlave();
+      address.trim();
+      if (address == "ERROR:[0]") {
+        Serial.println("FAILED : AT+ADDR");
+        return;
+      }
+    }
+    if (Serial.available()) {
+      String message = readFromSerial();
+      message.trim();
+      if (message == "q") {
+        return;
+      }
+    }
+  }
+  String output = address.substring(6);
+  output.replace(":", ",");
+  Serial.println(output);
   if (failed != "") {
     Serial.println("FAILED :" + failed);
   }
