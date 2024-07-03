@@ -77,7 +77,11 @@ const String _infosCommands[] = {
     "AT+BIND?"};
 
 void infosFrom(bool toMaster) {
-  Serial.println("board  : Infos :");
+  if (toMaster) {
+    Serial.println("board  : Infos from master :");
+  } else {
+    Serial.println("board  : Infos from slave :");
+  }
   for (const String command : _infosCommands) {
     if (toMaster) {
       sendToMaster(command, false);
