@@ -3,14 +3,15 @@
 SoftwareSerial module(6, 7);
 
 void setup() {
-  Serial.begin(38400);
+  Serial.begin(115200);
   Serial.println("starting...");
-  module.begin(9600);
+  module.begin(115200);
 }
 
 
 void loop() {
   if (module.available()) {
-    Serial.print(module.read());
+    char incoming = module.read();
+    Serial.print(incoming);
   }
 }
