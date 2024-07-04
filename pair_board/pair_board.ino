@@ -76,7 +76,8 @@ const String _infosCommands[] = {
     "AT+ROLE?",
     "AT+PSWD?",
     "AT+CMODE?",
-    "AT+BIND?"};
+    "AT+BIND?",
+    "AT+UART?"};
 
 void infosFrom(bool toMaster) {
   if (toMaster) {
@@ -116,6 +117,7 @@ const String _pair1Commands[] = {
     "AT+RESET",
     "AT",
     "AT+RMAAD",
+    "AT+UART=115200,0,0",
     "AT+NAME=LUDOMASTER",
     "AT+PSWD=VATECH"};
 
@@ -124,6 +126,7 @@ const String _pair2Commands[] = {
     "AT+ORGL",
     "AT",
     "AT+RMAAD",
+    "AT+UART=115200,0,0",
     "AT+NAME=LUDOSLAVE",
     "AT+PSWD=VATECH"};
 
