@@ -1,5 +1,5 @@
 {
-    "sketch": "pair_board\\pair_board.ino",
+    "sketch": "read_send_from_PC\\read_send_from_PC.ino",
     "board": "arduino:avr:uno",
     "port": "COM9",
     "programmer": "avrisp"
