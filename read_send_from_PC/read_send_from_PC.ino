@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 
-SoftwareSerial module(6, 7);
+SoftwareSerial module(11, 12);
 
 void setup() {
   Serial.begin(115200);
