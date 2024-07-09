@@ -117,18 +117,20 @@ const String _pair1Commands[] = {
     "AT+RESET",
     "AT",
     "AT+RMAAD",
+    "AT+CMODE=0",
     "AT+UART=115200,0,0",
     "AT+NAME=LUDOMASTER",
-    "AT+PSWD=VATECH"};
+    "AT+PSWD=\"VATECH\""};
 
 const String _pair2Commands[] = {
     "AT",
     "AT+ORGL",
     "AT",
     "AT+RMAAD",
+    "AT+CMODE=0",
     "AT+UART=115200,0,0",
     "AT+NAME=LUDOSLAVE",
-    "AT+PSWD=VATECH"};
+    "AT+PSWD=\"VATECH\""};
 
 bool waitForOK(String *failed, String command, bool waitMaster) {
   while (true) {
